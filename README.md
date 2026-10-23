@@ -1,16 +1,77 @@
 # TaskFlow App
 
-Aplicación móvil para organizar tareas, desarrollada con **React Native** y **Expo**. El proyecto parte de la plantilla *Blank* de Expo, por lo que la estructura se construye desde cero.
+Aplicación móvil desarrollada con **React Native**, **Expo** y **TypeScript**. En esta entrega se transformó el proyecto base en una app con una estructura profesional, enfocada en la organización del código y en la creación de componentes reutilizables.
 
-## Requisitos previos
+## Pantallas visualizadas
 
-- [Node.js](https://nodejs.org/) (versión LTS recomendada)
-- npm (incluido con Node.js)
-- La app **Expo Go** en tu celular (Android / iOS) o un emulador configurado
+- **ProfileScreen**: pantalla que se renderiza actualmente desde `App.tsx`. Muestra el componente `ProfileCard` con datos de prueba (nombre, rol e imagen de placeholder) recibidos por props.
+- **HomeScreen**: pantalla inicial creada y lista para desarrollarse. Todavía no tiene navegación, por lo que no se muestra en la app.
 
-## Ejecución local
+## Componente `ProfileCard`
 
-1. Clonar el repositorio e ingresar a la carpeta del proyecto:
+Tarjeta de perfil reutilizable ubicada en `src/components/ProfileCard.tsx`.
+
+| Prop | Tipo | Descripción |
+| --- | --- | --- |
+| `name` | `string` | Nombre de la persona |
+| `role` | `string` | Rol |
+| `image` | `string` | URL de la imagen del avatar |
+
+Características:
+
+- Recibe toda la información por props (no hay datos escritos a fuego dentro del componente).
+- Usa `<Image />` de React Native para el avatar.
+- Estilos con `StyleSheet`: bordes redondeados, sombra y padding.
+- Los colores se toman desde `src/constants/`, sin valores repetidos en el componente.
+
+Ejemplo de uso:
+
+```tsx
+<ProfileCard
+  name="Santino Vissani"
+  role="Desarrollador Full Stack"
+  image="https://i.pravatar.cc/150?img=55"
+/>
+```
+
+## Estructura del proyecto
+
+```
+taskflow-app/
+├── App.tsx                      # Renderiza ProfileScreen
+├── app.json
+├── index.ts
+├── tsconfig.json
+├── package.json
+└── src/
+    ├── assets/                  # Imágenes y recursos
+    ├── components/
+    │   └── ProfileCard.tsx      # Tarjeta de perfil reutilizable
+    ├── constants/
+    │   └── theme.ts            # Paleta de colores de TaskFlow
+    └── screens/
+        ├── HomeScreen.tsx
+        └── ProfileScreen.tsx
+```
+
+## Paleta de colores
+
+Definida en `src/constants/colors.ts`:
+
+| Nombre | Uso |
+| --- | --- |
+| `primary` | Color principal de la app |
+| `background` | Fondo de las pantallas |
+| `card` | Fondo de las tarjetas |
+| `text` | Texto principal |
+| `textLight` | Texto secundario |
+| `border` | Bordes y divisores |
+| `success` | Estados exitosos |
+| `danger` | Errores y acciones destructivas |
+
+## Cómo ejecutarlo localmente
+
+1. Clonar el repositorio e ingresar a la carpeta:
 
    ```bash
    git clone <url-del-repositorio>
@@ -30,31 +91,9 @@ Aplicación móvil para organizar tareas, desarrollada con **React Native** y **
    ```
 
 4. Abrir la app:
-   - **Celular:** escaneá el código QR con Expo Go (el celular y la PC deben estar en la misma red Wi-Fi).
-   - **Emulador Android:** presioná `a` en la terminal.
-   - **Navegador:** presioná `w` en la terminal.
-
-## Scripts disponibles
-
-| Comando | Descripción |
-| --- | --- |
-| `npm install` | Instala las dependencias |
-| `npx expo start` | Inicia el servidor de desarrollo |
-| `npm run android` | Abre la app en un emulador Android |
-| `npm run ios` | Abre la app en un simulador iOS (solo macOS) |
-| `npm run web` | Ejecuta la app en el navegador |
-
-## Estructura del proyecto
-
-```
-taskflow-app/
-├── App.tsx         # Componente raíz
-├── app.json        # Configuración de Expo
-├── index.ts        # Punto de entrada
-├── tsconfig.json   # Configuración de TypeScript
-├── package.json
-└── assets/         # Íconos e imágenes
-```
+   - **Celular:** escanear el QR con Expo Go (misma red Wi-Fi).
+   - **Emulador Android:** presionar `a` en la terminal.
+   - **Navegador:** presionar `w` en la terminal.
 
 ## Tecnologías
 

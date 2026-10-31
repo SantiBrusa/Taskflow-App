@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { View, TextInput, StyleSheet, TouchableOpacity, Alert, Text } from "react-native"
+import { View, TextInput, StyleSheet, TouchableOpacity, Alert, Text, Keyboard, TouchableWithoutFeedback } from "react-native"
 import { COLORS } from "../constants/theme"
 
 const categories = [
@@ -71,52 +71,53 @@ export function AddTaskForm() {
         }
     }
   return (
-    <View style={styles.container}>
-        <TextInput
-        style={[styles.input, { borderColor: getBorderColor("title")}]}
-        placeholder="¿Qué hay que hacer?"
-        placeholderTextColor={COLORS.textLight}
-        value={title}
-        onChangeText={setTitle}
-        autoCapitalize="sentences"
-        onFocus={() => setFocused("title")}
-        onBlur={() => setFocused(null)}
-        />
-        {errors.title && <Text style={styles.errorText}>{errors.title}</Text>}
-        <TextInput
-        style={[styles.input, styles.textArea, { borderColor: getBorderColor("description")}]}
-        placeholder="Describe que hacer"
-        placeholderTextColor={COLORS.textLight}
-        value={description}
-        onChangeText={setDescription}
-        multiline
-        numberOfLines={4}
-        textAlignVertical="top"
-        autoCapitalize="sentences"
-        onFocus={() => setFocused("description")}
-        onBlur={() => setFocused(null)}
-        />
-        {errors.description && <Text style={styles.errorText}>{errors.description}</Text>}
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+        <View style={styles.container}>
+            <TextInput
+            style={[styles.input, { borderColor: getBorderColor("title")}]}
+            placeholder="¿Qué hay que hacer?"
+            placeholderTextColor={COLORS.textLight}
+            value={title}
+            onChangeText={setTitle}
+            autoCapitalize="sentences"
+            onFocus={() => setFocused("title")}
+            onBlur={() => setFocused(null)}
+            />
+            {errors.title && <Text style={styles.errorText}>{errors.title}</Text>}
+            <TextInput
+            style={[styles.input, styles.textArea, { borderColor: getBorderColor("description")}]}
+            placeholder="Describe que hacer"
+            placeholderTextColor={COLORS.textLight}
+            value={description}
+            onChangeText={setDescription}
+            multiline
+            numberOfLines={4}
+            textAlignVertical="top"
+            autoCapitalize="sentences"
+            onFocus={() => setFocused("description")}
+            onBlur={() => setFocused(null)}
+            />
+            {errors.description && <Text style={styles.errorText}>{errors.description}</Text>}
 
-        <View style={styles.categories}>
-            {categories.map((c)=>(
-                <TouchableOpacity
-                key={c}
-                style={[styles.optionCategory, c === category && styles.optionSelected]}
-                onPress={()=>setCategory(c)}
-                >
-                    <Text style={[styles.optionText, c === category && styles.textSelected]}>{c}</Text>
-                </TouchableOpacity>
-            ))}
+            <View style={styles.categories}>
+                {categories.map((c)=>(
+                    <TouchableOpacity
+                    key={c}
+                    style={[styles.optionCategory, c === category && styles.optionSelected]}
+                    onPress={()=>setCategory(c)}
+                    >
+                        <Text style={[styles.optionText, c === category && styles.textSelected]}>{c}</Text>
+                    </TouchableOpacity>
+                ))}
+            </View>
+
+            <TouchableOpacity style={styles.button} onPress={handleAddTask}>
+                <Text style={styles.buttonText}>Guardar</Text>
+            </TouchableOpacity>
         </View>
-
-        <TouchableOpacity style={styles.button} onPress={handleAddTask}>
-            <Text style={styles.buttonText}>Guardar</Text>
-        </TouchableOpacity>
-    </View>
+    </TouchableWithoutFeedback>
 
   )
-
 }
 
 const styles = StyleSheet.create({

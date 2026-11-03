@@ -1,18 +1,18 @@
 import { Alert } from "react-native"
 import { NativeStackScreenProps } from "@react-navigation/native-stack"
 import { HomeStackParamList } from "../navigation/types"
-import { useTasks } from "../context/TasksContext"
+import { useAppDispatch, useAppSelector } from "../store/hooks"
+import { deleteTask, toggleTaskStatus } from "../store/tasksSlice"
 import { TaskDetail } from "../components/TaskDetail"
 
 type Props = NativeStackScreenProps<HomeStackParamList, "TaskDetail">
 
 export function TaskDetailScreen({ route, navigation }: Props) {
-    // El ID llega por parámetros; la tarea se busca en el estado compartido
     const { taskId } = route.params
-    const { tasks, deleteTask } = useTasks()
-    const task = tasks.find((t) => t.id === taskId)
+    const dispatch = useAppDispatch()
+    const task = useAppSelector((state) => state.tasks.items.find((t) => t.id === taskId))
 
-    // Mientras se borra, la tarea deja de existir: no hay nada que mostrar
+    // Los hooks van antes de este return; si la tarea se borró, no hay nada que mostrar
     if (!task) return null
 
     const handleDelete = (id: string) => {
@@ -22,7 +22,7 @@ export function TaskDetailScreen({ route, navigation }: Props) {
                 text: "Eliminar",
                 style: "destructive",
                 onPress: () => {
-                    deleteTask(id)
+                    dispatch(deleteTask(id))
                     navigation.goBack()
                 },
             },
@@ -34,6 +34,7 @@ export function TaskDetailScreen({ route, navigation }: Props) {
             task={task}
             onBack={() => navigation.goBack()}
             onDelete={handleDelete}
+            onToggle={() => dispatch(toggleTaskStatus(task.id))}
         />
     )
 }

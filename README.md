@@ -1,40 +1,69 @@
 # TaskFlow App
 
-Aplicación móvil para gestionar tareas, desarrollada con **React Native**, **Expo** y **TypeScript**. Integra los componentes de las entregas anteriores en un flujo de navegación con **React Navigation**.
+Aplicación móvil para gestionar tareas, desarrollada con **React Native**, **Expo** y **TypeScript**. Usa **React Navigation** para la navegación y **Redux Toolkit** como estado global.
+
+## Funcionalidades
+
+- Crear tareas con título, descripción y categoría, con validaciones y errores en pantalla.
+- Lista de tareas con `FlatList` y estado vacío ("¡No tienes tareas pendientes! Empieza por crear una arriba.").
+- **Filtro global** (Todas, Pendientes, Completadas) guardado en el store: no se pierde al cambiar de pestaña.
+- Marcar tareas como completadas desde la lista o desde el detalle.
+- Ver el detalle de una tarea y eliminarla con confirmación.
 
 ## Navegación
 
 ```
 BottomTabNavigator
 ├── Home  →  NativeStackNavigator
-│            ├── TaskList    (lista de tareas)
-│            ├── TaskDetail  (detalle de la tarea seleccionada)
+│            ├── TaskList    (lista, filtros y botón "+ Nueva tarea")
+│            ├── TaskDetail  (detalle, completar y eliminar)
 │            └── TaskForm    (formulario para agregar tareas)
 └── Profile                  (tarjeta de perfil)
 ```
 
-- **Tabs:** `Home` y `Profile`, con iconos de Ionicons (versión rellena en la pestaña activa).
-- **TaskList → TaskDetail:** al tocar una tarea se navega pasando su `taskId` por parámetros. El detalle busca la tarea en el estado compartido.
-- **TaskList → TaskForm:** el botón "+ Nueva tarea" abre el formulario.
-- **TaskForm → TaskList:** al guardar, se vuelve a la lista (`navigation.navigate('TaskList')`).
-- **TaskDetail:** se puede volver con la flecha nativa del header o con el botón "Volver".
+## Estado global con Redux Toolkit
 
-## Funcionalidades
+Todo el estado de las tareas vive en el store; las pantallas no manejan datos locales. Los componentes reciben props y delegan la lógica al store.
 
-- Crear tareas con título, descripción y categoría, con validaciones y errores en pantalla.
-- Lista con `FlatList` y estado vacío ("¡No tienes tareas pendientes! Empieza por crear una arriba.").
-- Marcar tareas como completadas (el título se tacha).
-- Ver el detalle de una tarea y eliminarla con confirmación.
+**Store:** `src/store/store.ts`, configurado con `configureStore`.
 
-## Estado compartido
+**Slice `tasks`:** `src/store/tasksSlice.ts`, creado con `createSlice`.
 
-Las pantallas del stack comparten las tareas mediante un **Context** (`src/context/TasksContext.tsx`), que expone `tasks`, `addTask`, `toggleTask` y `deleteTask`. Todas las actualizaciones son inmutables (`[...prev, task]`, `map` y `filter`).
+Estado inicial:
+
+```ts
+{ items: Task[], filter: "all" | "completed" | "pending" }
+```
+
+| Reducer | Qué hace |
+| --- | --- |
+| `addTask` | Recibe los datos del formulario y genera el ID único (`nanoid`), la fecha y `completed: false` |
+| `toggleTaskStatus` | Invierte `completed` de la tarea con ese ID |
+| `deleteTask` | Elimina la tarea con ese ID |
+| `setFilter` | Actualiza el filtro global |
+
+**Selectores:** `selectTasks`, `selectFilter` y `selectFilteredTasks` (con `createSelector`, que solo recalcula cuando cambian las tareas o el filtro).
+
+**Hooks tipados:** `useAppDispatch` y `useAppSelector` en `src/store/hooks.ts`.
+
+## Modelo de datos
+
+```ts
+export type Task = {
+  id: string
+  title: string
+  description: string
+  category: string
+  createdAt: string
+  completed: boolean
+}
+```
 
 ## Estructura del proyecto
 
 ```
 TaskFlow/
-├── App.tsx                      # TasksProvider + AppNavigator
+├── App.tsx                      # Provider de Redux + AppNavigator
 ├── package.json
 └── src/
     ├── assets/
@@ -46,23 +75,27 @@ TaskFlow/
     │   └── TaskItem.tsx         # Fila de la lista
     ├── constants/
     │   └── theme.ts             # Paleta de colores (COLORS)
-    ├── context/
-    │   └── TasksContext.tsx     # Estado compartido de tareas
     ├── navigation/
-    │   ├── AppNavigator.tsx     # Configuración principal (Tabs + Stack)
+    │   ├── AppNavigator.tsx     # Tabs + Stack
     │   └── types.ts             # Tipos de las rutas
     ├── screens/
     │   ├── TaskListScreen.tsx
     │   ├── TaskDetailScreen.tsx
     │   ├── TaskFormScreen.tsx
     │   └── ProfileScreen.tsx
+    ├── store/
+    │   ├── store.ts             # configureStore
+    │   ├── tasksSlice.ts        # createSlice + selectores
+    │   └── hooks.ts             # useAppDispatch / useAppSelector
     └── types/
-        └── task.ts              # Tipo Task
+        └── task.ts              # Tipos Task y NewTask
 ```
 
 ## Dependencias principales
 
 - `expo`, `react-native`, `typescript`
+- `@reduxjs/toolkit`
+- `react-redux`
 - `@react-navigation/native`
 - `@react-navigation/native-stack`
 - `@react-navigation/bottom-tabs`
@@ -82,7 +115,7 @@ TaskFlow/
 2. Cambiar a la rama de esta entrega:
 
    ```bash
-   git checkout feature/navigation
+   git checkout feature/redux
    ```
 
 3. Instalar las dependencias:
@@ -106,5 +139,6 @@ TaskFlow/
 
 - [React Native](https://reactnative.dev/)
 - [Expo](https://expo.dev/)
+- [Redux Toolkit](https://redux-toolkit.js.org/)
 - [React Navigation](https://reactnavigation.org/)
 - [TypeScript](https://www.typescriptlang.org/)

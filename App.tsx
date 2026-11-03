@@ -1,11 +1,11 @@
-import { TasksProvider } from "./src/context/TasksContext"
+import { Provider } from "react-redux"
+import { store } from "./src/store/store"
 import AppNavigator from "./src/navigation/AppNavigator"
 
 export default function App() {
   return (
-    // El Provider envuelve todo para que cualquier pantalla acceda a las tareas
-    <TasksProvider>
+    <Provider store={store}>
       <AppNavigator />
-    </TasksProvider>
+    </Provider>
   )
 }

@@ -6,3 +6,5 @@ export type Task = {
     createdAt: string
     completed: boolean
 }
+
+export type NewTask = Omit<Task, "id" | "createdAt" | "completed">

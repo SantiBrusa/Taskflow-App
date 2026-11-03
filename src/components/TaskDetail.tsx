@@ -6,9 +6,10 @@ type TaskDetailProps = {
     task: Task
     onBack: () => void
     onDelete: (id: string) => void
+    onToggle: () => void
 }
 
-export function TaskDetail({ task, onBack, onDelete }: TaskDetailProps) {
+export function TaskDetail({ task, onBack, onDelete, onToggle }: TaskDetailProps) {
     return (
         <View style={styles.container}>
             <View style={styles.card}>
@@ -26,6 +27,12 @@ export function TaskDetail({ task, onBack, onDelete }: TaskDetailProps) {
                 <Text style={styles.label}>Estado</Text>
                 <Text style={styles.value}>{task.completed ? "Completada" : "Pendiente"}</Text>
             </View>
+
+            <TouchableOpacity style={styles.toggleButton} onPress={onToggle}>
+                <Text style={styles.toggleText}>
+                    {task.completed ? "Marcar como pendiente" : "Marcar como completada"}
+                </Text>
+            </TouchableOpacity>
 
             <TouchableOpacity style={styles.button} onPress={onBack}>
                 <Text style={styles.buttonText}>Volver</Text>
@@ -89,5 +96,18 @@ const styles = StyleSheet.create({
         paddingVertical: 10,
         alignItems: "center",
         marginTop: 12,
+    },
+    toggleButton: {
+        borderWidth: 1.5,
+        borderColor: COLORS.primary,
+        borderRadius: 20,
+        paddingVertical: 10,
+        alignItems: "center",
+        marginTop: 20,
+    },
+    toggleText: {
+        color: COLORS.primary,
+        fontWeight: "bold",
+        fontSize: 16,
     },
 })

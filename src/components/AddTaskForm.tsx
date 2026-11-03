@@ -1,10 +1,10 @@
 import { useState } from "react"
 import { View, TextInput, StyleSheet, TouchableOpacity, Alert, Text, Keyboard, TouchableWithoutFeedback } from "react-native"
 import { COLORS } from "../constants/theme"
-import { Task } from "../types/task"
+import { NewTask } from "../types/task"
 
 type AddTaskFormProps = {
-    onAddTask: (task: Task) => void
+    onAddTask: (task: NewTask) => void
 }
 
 // Categorías disponibles. La primera queda seleccionada por defecto.
@@ -65,14 +65,10 @@ export function AddTaskForm({ onAddTask }: AddTaskFormProps) {
             return;
         }
 
-        // Objeto final de la tarea (con los textos sin espacios sobrantes)
-        const task: Task = {
-            id: Date.now().toString(),
+        const task: NewTask = {
             title: title.trim(),
             description: description.trim(),
             category: category,
-            createdAt: new Date().toLocaleDateString(),
-            completed: false
         }
 
         console.log(task)

@@ -74,8 +74,7 @@ export function AddTaskForm({ onAddTask }: AddTaskFormProps) {
         console.log(task)
         onAddTask(task)
 
-        Alert.alert("Éxito","Tarea capturada localmente")
-
+        Alert.alert("Éxito", "Tarea guardada")
         // Se limpian los campos y la categoría vuelve a la de por defecto
         setTitle("")
         setDescription("")

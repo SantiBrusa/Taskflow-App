@@ -9,8 +9,8 @@ import {
     selectFilter,
     selectFilteredTasks,
     setFilter,
-    toggleTaskStatus,
 } from "../store/tasksSlice"
+import { useTaskActions } from "../hooks/useTasksActions"
 import { TaskItem } from "../components/TaskItem"
 import { EmptyState } from "../components/EmptyState"
 
@@ -24,6 +24,7 @@ const FILTERS: { value: Filter; label: string }[] = [
 
 export function TaskListScreen({ navigation }: Props) {
     const dispatch = useAppDispatch()
+    const { toggle } = useTaskActions()
     const allTasks = useAppSelector(selectTasks)
     const tasks = useAppSelector(selectFilteredTasks)
     const filter = useAppSelector(selectFilter)
@@ -61,7 +62,7 @@ export function TaskListScreen({ navigation }: Props) {
                         <TaskItem
                             task={item}
                             onSelect={(task) => navigation.navigate("TaskDetail", { taskId: task.id })}
-                            onToggle={(id) => dispatch(toggleTaskStatus(id))}
+                            onToggle={() => toggle(item)}
                         />
                     )}
                 />

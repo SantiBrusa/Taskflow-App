@@ -9,3 +9,8 @@ export type RootTabParamList = {
     Home: undefined
     Profile: undefined
 }
+
+export type AuthStackParamList = {
+    Login: undefined
+    Register: undefined
+}

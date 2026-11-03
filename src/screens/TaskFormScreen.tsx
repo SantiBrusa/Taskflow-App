@@ -1,17 +1,16 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack"
 import { HomeStackParamList } from "../navigation/types"
 import { NewTask } from "../types/task"
-import { useAppDispatch } from "../store/hooks"
-import { addTask } from "../store/tasksSlice"
+import { useTaskActions } from "../hooks/useTasksActions"
 import { AddTaskForm } from "../components/AddTaskForm"
 
 type Props = NativeStackScreenProps<HomeStackParamList, "TaskForm">
 
 export function TaskFormScreen({ navigation }: Props) {
-    const dispatch = useAppDispatch()
+    const { add } = useTaskActions()
 
     const handleAdd = (data: NewTask) => {
-        dispatch(addTask(data))
+        add(data)
         navigation.goBack()
     }
 

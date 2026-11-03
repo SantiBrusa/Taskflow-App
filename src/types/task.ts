@@ -5,6 +5,8 @@ export type Task = {
     category: string
     createdAt: string
     completed: boolean
+    userId: string
 }
 
-export type NewTask = Omit<Task, "id" | "createdAt" | "completed">
+// Lo que aporta el formulario; el resto lo completa el servicio
+export type NewTask = Omit<Task, "id" | "createdAt" | "completed" | "userId">

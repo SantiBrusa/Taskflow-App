@@ -1,6 +1,11 @@
 import { useState } from "react"
 import { View, TextInput, StyleSheet, TouchableOpacity, Alert, Text, Keyboard, TouchableWithoutFeedback } from "react-native"
 import { COLORS } from "../constants/theme"
+import { Task } from "../types/task"
+
+type AddTaskFormProps = {
+    onAddTask: (task: Task) => void
+}
 
 // Categorías disponibles. La primera queda seleccionada por defecto.
 const categories = [
@@ -9,7 +14,7 @@ const categories = [
     "Administracion",
 ]
 
-export function AddTaskForm() {
+export function AddTaskForm({ onAddTask }: AddTaskFormProps) {
     // Estado de cada campo del formulario (inputs controlados)
     const [title, setTitle] = useState("")
     const [description, setDescription] = useState("")
@@ -61,13 +66,17 @@ export function AddTaskForm() {
         }
 
         // Objeto final de la tarea (con los textos sin espacios sobrantes)
-        const task = {
+        const task: Task = {
+            id: Date.now().toString(),
             title: title.trim(),
             description: description.trim(),
-            category: category
+            category: category,
+            createdAt: new Date().toLocaleDateString(),
+            completed: false
         }
 
         console.log(task)
+        onAddTask(task)
 
         Alert.alert("Éxito","Tarea capturada localmente")
 
@@ -148,7 +157,6 @@ export function AddTaskForm() {
 
 const styles = StyleSheet.create({
     container: {
-        flex: 4,
         padding: 20,
         backgroundColor: COLORS.background,
     },

@@ -1,85 +1,92 @@
 # TaskFlow App
 
-Aplicación móvil desarrollada con **React Native**, **Expo** y **TypeScript**. Esta entrega suma a la estructura base un **formulario de creación de tareas** con validaciones, manejo de estado local y estilos dinámicos.
+Aplicación móvil para gestionar tareas, desarrollada con **React Native**, **Expo** y **TypeScript**. Permite crear tareas con un formulario validado, verlas en una lista, marcarlas como completadas, consultar su detalle y eliminarlas.
 
 ## Funcionalidades
 
-### Formulario de creación de tareas (`AddTaskForm`)
+- **Crear tareas** con título, descripción y categoría, con validaciones y errores en pantalla.
+- **Lista de tareas** con `FlatList` (virtualizada y con identificadores estables).
+- **Estado vacío:** si no hay tareas se muestra el mensaje "¡No tienes tareas pendientes! Empieza por crear una arriba."
+- **Marcar como completada:** el círculo de cada fila alterna entre pendiente (○) y completada (✓), y el título se tacha.
+- **Detalle de tarea:** al tocar una tarea se oculta la lista y el formulario y se muestra su información completa.
+- **Volver:** el botón regresa a la lista.
+- **Eliminar:** borra la tarea (con confirmación) y vuelve a la lista; si era la última, reaparece el estado vacío.
 
-Ubicado en `src/components/AddTaskForm.tsx`. Permite cargar una tarea con:
+## Pantallas y componentes
 
-- **Título** (`TextInput`)
-- **Descripción** (`TextInput` multilínea)
-- **Categoría** (set de botones: Mantenimiento, Limpieza, Administración)
+### `HomeScreen`
 
-#### Estado local
+Pantalla principal. Concentra el estado de la app:
 
-Cada campo se maneja con `useState` como componente controlado (`value` + `onChangeText`). Además hay estados para los errores y para el campo que está enfocado.
+- `tasks`: arreglo de tareas (arranca vacío).
+- `selectedTask`: tarea seleccionada, o `null` si no hay ninguna.
 
-#### Validaciones
+Usa **renderizado condicional**:
+
+- Si `selectedTask` tiene valor, muestra solo `TaskDetail`.
+- Si no, muestra `AddTaskForm` y, debajo, el `EmptyState` (sin tareas) o la `FlatList` (con tareas).
+
+Todas las actualizaciones del estado son **inmutables**: `[...tasks, task]` para agregar, `map` para completar y `filter` para eliminar.
+
+### `AddTaskForm`
+
+Formulario de creación (`src/components/AddTaskForm.tsx`).
 
 | Campo | Regla |
 | --- | --- |
 | Título | Obligatorio, mínimo 5 caracteres |
 | Descripción | Obligatoria, mínimo 10 caracteres |
-| Categoría | Siempre hay una seleccionada por defecto (la primera) |
+| Categoría | Siempre hay una seleccionada por defecto |
 
-Se usa `trim()` para que los espacios en blanco no cuenten como contenido. Los errores aparecen en rojo debajo de cada campo al intentar guardar.
+- Inputs controlados con `useState`.
+- Borde dinámico: gris en reposo, violeta en foco y rojo con error (el error tiene prioridad).
+- Mensajes de error en rojo debajo de cada campo al intentar guardar.
+- Al tocar fuera de los campos se cierra el teclado.
+- Si todo es válido, arma la tarea, muestra un `Alert`, la entrega a `HomeScreen` mediante la prop `onAddTask` y limpia el formulario.
 
-#### Interfaz
+### `TaskItem`
 
-- El borde de cada input cambia de color: **gris** en reposo, **violeta** al estar en foco y **rojo** si hay error (el error tiene prioridad sobre el foco).
-- La categoría seleccionada se resalta con el color primario.
-- El botón **Guardar** es un `TouchableOpacity`.
-- El teclado se cierra al tocar fuera de los campos (`Keyboard.dismiss`), útil en iPhone con el campo multilínea.
-- `autoCapitalize="sentences"` en título y descripción para escribir más cómodo en mobile.
+Fila de la lista. Tocar el título selecciona la tarea; el botón de la derecha alterna su estado de completada. Recibe todo por props (`task`, `onSelect`, `onToggle`).
 
-#### Simulación de API: `handleAddTask`
+### `EmptyState`
 
-1. Valida los campos y actualiza los errores.
-2. Si hay errores, corta y los muestra.
-3. Si todo es válido, arma el objeto de la tarea, lo muestra por consola, dispara `Alert.alert("Éxito", "Tarea capturada localmente")` y limpia el formulario.
+Mensaje que se muestra cuando no hay tareas.
 
-Ejemplo del objeto que se imprime en consola:
+### `TaskDetail`
 
-```json
-{
-  "title": "Revisar surtidores",
-  "description": "Controlar el estado de las mangueras del sector 2",
-  "category": "Mantenimiento"
-}
-```
-
-### Componente `ProfileCard`
-
-Tarjeta de perfil reutilizable ubicada en `src/components/ProfileCard.tsx`.
+Muestra el detalle de la tarea seleccionada.
 
 | Prop | Tipo | Descripción |
 | --- | --- | --- |
-| `name` | `string` | Nombre de la persona |
-| `role` | `string` | Rol |
-| `image` | `string` | URL de la imagen del avatar |
+| `task` | `Task` | Tarea a mostrar |
+| `onBack` | `() => void` | Vuelve a la lista |
+| `onDelete` | `(id: string) => void` | Elimina la tarea |
 
-Recibe todos los datos por props y usa `StyleSheet` con bordes redondeados, sombra y padding.
+Muestra título, descripción, categoría, fecha de creación y estado, con los botones **Volver** y **Eliminar**.
 
-```tsx
-<ProfileCard
-  name="Santino Vissani"
-  role="Desarrollador Full Stack"
-  image="https://i.pravatar.cc/150?img=55"
-/>
+### `ProfileCard`
+
+Tarjeta de perfil reutilizable de la entrega anterior (`name`, `role` e `image` por props). Se mantiene en `src/components/`.
+
+## Modelo de datos
+
+Definido en `src/types/task.ts`:
+
+```ts
+export type Task = {
+  id: string
+  title: string
+  description: string
+  category: string
+  createdAt: string
+  completed: boolean
+}
 ```
-
-## Pantallas
-
-- **AddTaskForm**: es lo que se renderiza actualmente desde `App.tsx`.
-- **ProfileScreen**: muestra el `ProfileCard` con datos de prueba.
-- **HomeScreen**: creada y lista para desarrollarse; todavía no tiene navegación.
 
 ## Estructura del proyecto
 
 ```
-taskflow-app/
+TaskFlow/
 ├── App.tsx
 ├── app.json
 ├── index.ts
@@ -88,13 +95,18 @@ taskflow-app/
 └── src/
     ├── assets/
     ├── components/
-    │   ├── AddTaskForm.tsx      # Formulario de creación de tareas
-    │   └── ProfileCard.tsx      # Tarjeta de perfil reutilizable
+    │   ├── AddTaskForm.tsx      # Formulario con validaciones
+    │   ├── EmptyState.tsx       # Mensaje cuando no hay tareas
+    │   ├── ProfileCard.tsx      # Tarjeta de perfil reutilizable
+    │   ├── TaskDetail.tsx       # Detalle de una tarea
+    │   └── TaskItem.tsx         # Fila de la lista
     ├── constants/
     │   └── theme.ts             # Paleta de colores (COLORS)
-    └── screens/
-        ├── HomeScreen.tsx
-        └── ProfileScreen.tsx
+    ├── screens/
+    │   ├── HomeScreen.tsx       # Pantalla principal y estado
+    │   └── ProfileScreen.tsx
+    └── types/
+        └── task.ts              # Tipo Task
 ```
 
 ## Paleta de colores
@@ -105,12 +117,12 @@ Definida en `src/constants/theme.ts` como `COLORS`:
 | --- | --- |
 | `primary` | Color principal, foco de inputs y botones |
 | `background` | Fondo de las pantallas |
-| `card` | Fondo de inputs y tarjetas |
+| `card` | Fondo de inputs, filas y tarjetas |
 | `text` | Texto principal |
 | `textLight` | Texto secundario y placeholders |
 | `border` | Bordes en reposo |
 | `success` | Estados exitosos |
-| `danger` | Errores |
+| `danger` | Errores y botón de eliminar |
 
 ## Cómo ejecutarlo localmente
 
@@ -121,10 +133,10 @@ Definida en `src/constants/theme.ts` como `COLORS`:
    cd TaskFlow
    ```
 
-2. Cambiar a la rama del formulario:
+2. Cambiar a la rama de esta entrega:
 
    ```bash
-   git checkout feature/add-task-form
+   git checkout feature/task-detail
    ```
 
 3. Instalar las dependencias:

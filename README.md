@@ -1,128 +1,74 @@
 # TaskFlow App
 
-Aplicación móvil para gestionar tareas, desarrollada con **React Native**, **Expo** y **TypeScript**. Permite crear tareas con un formulario validado, verlas en una lista, marcarlas como completadas, consultar su detalle y eliminarlas.
+Aplicación móvil para gestionar tareas, desarrollada con **React Native**, **Expo** y **TypeScript**. Integra los componentes de las entregas anteriores en un flujo de navegación con **React Navigation**.
+
+## Navegación
+
+```
+BottomTabNavigator
+├── Home  →  NativeStackNavigator
+│            ├── TaskList    (lista de tareas)
+│            ├── TaskDetail  (detalle de la tarea seleccionada)
+│            └── TaskForm    (formulario para agregar tareas)
+└── Profile                  (tarjeta de perfil)
+```
+
+- **Tabs:** `Home` y `Profile`, con iconos de Ionicons (versión rellena en la pestaña activa).
+- **TaskList → TaskDetail:** al tocar una tarea se navega pasando su `taskId` por parámetros. El detalle busca la tarea en el estado compartido.
+- **TaskList → TaskForm:** el botón "+ Nueva tarea" abre el formulario.
+- **TaskForm → TaskList:** al guardar, se vuelve a la lista (`navigation.navigate('TaskList')`).
+- **TaskDetail:** se puede volver con la flecha nativa del header o con el botón "Volver".
 
 ## Funcionalidades
 
-- **Crear tareas** con título, descripción y categoría, con validaciones y errores en pantalla.
-- **Lista de tareas** con `FlatList` (virtualizada y con identificadores estables).
-- **Estado vacío:** si no hay tareas se muestra el mensaje "¡No tienes tareas pendientes! Empieza por crear una arriba."
-- **Marcar como completada:** el círculo de cada fila alterna entre pendiente (○) y completada (✓), y el título se tacha.
-- **Detalle de tarea:** al tocar una tarea se oculta la lista y el formulario y se muestra su información completa.
-- **Volver:** el botón regresa a la lista.
-- **Eliminar:** borra la tarea (con confirmación) y vuelve a la lista; si era la última, reaparece el estado vacío.
+- Crear tareas con título, descripción y categoría, con validaciones y errores en pantalla.
+- Lista con `FlatList` y estado vacío ("¡No tienes tareas pendientes! Empieza por crear una arriba.").
+- Marcar tareas como completadas (el título se tacha).
+- Ver el detalle de una tarea y eliminarla con confirmación.
 
-## Pantallas y componentes
+## Estado compartido
 
-### `HomeScreen`
-
-Pantalla principal. Concentra el estado de la app:
-
-- `tasks`: arreglo de tareas (arranca vacío).
-- `selectedTask`: tarea seleccionada, o `null` si no hay ninguna.
-
-Usa **renderizado condicional**:
-
-- Si `selectedTask` tiene valor, muestra solo `TaskDetail`.
-- Si no, muestra `AddTaskForm` y, debajo, el `EmptyState` (sin tareas) o la `FlatList` (con tareas).
-
-Todas las actualizaciones del estado son **inmutables**: `[...tasks, task]` para agregar, `map` para completar y `filter` para eliminar.
-
-### `AddTaskForm`
-
-Formulario de creación (`src/components/AddTaskForm.tsx`).
-
-| Campo | Regla |
-| --- | --- |
-| Título | Obligatorio, mínimo 5 caracteres |
-| Descripción | Obligatoria, mínimo 10 caracteres |
-| Categoría | Siempre hay una seleccionada por defecto |
-
-- Inputs controlados con `useState`.
-- Borde dinámico: gris en reposo, violeta en foco y rojo con error (el error tiene prioridad).
-- Mensajes de error en rojo debajo de cada campo al intentar guardar.
-- Al tocar fuera de los campos se cierra el teclado.
-- Si todo es válido, arma la tarea, muestra un `Alert`, la entrega a `HomeScreen` mediante la prop `onAddTask` y limpia el formulario.
-
-### `TaskItem`
-
-Fila de la lista. Tocar el título selecciona la tarea; el botón de la derecha alterna su estado de completada. Recibe todo por props (`task`, `onSelect`, `onToggle`).
-
-### `EmptyState`
-
-Mensaje que se muestra cuando no hay tareas.
-
-### `TaskDetail`
-
-Muestra el detalle de la tarea seleccionada.
-
-| Prop | Tipo | Descripción |
-| --- | --- | --- |
-| `task` | `Task` | Tarea a mostrar |
-| `onBack` | `() => void` | Vuelve a la lista |
-| `onDelete` | `(id: string) => void` | Elimina la tarea |
-
-Muestra título, descripción, categoría, fecha de creación y estado, con los botones **Volver** y **Eliminar**.
-
-### `ProfileCard`
-
-Tarjeta de perfil reutilizable de la entrega anterior (`name`, `role` e `image` por props). Se mantiene en `src/components/`.
-
-## Modelo de datos
-
-Definido en `src/types/task.ts`:
-
-```ts
-export type Task = {
-  id: string
-  title: string
-  description: string
-  category: string
-  createdAt: string
-  completed: boolean
-}
-```
+Las pantallas del stack comparten las tareas mediante un **Context** (`src/context/TasksContext.tsx`), que expone `tasks`, `addTask`, `toggleTask` y `deleteTask`. Todas las actualizaciones son inmutables (`[...prev, task]`, `map` y `filter`).
 
 ## Estructura del proyecto
 
 ```
 TaskFlow/
-├── App.tsx
-├── app.json
-├── index.ts
-├── tsconfig.json
+├── App.tsx                      # TasksProvider + AppNavigator
 ├── package.json
 └── src/
     ├── assets/
     ├── components/
     │   ├── AddTaskForm.tsx      # Formulario con validaciones
     │   ├── EmptyState.tsx       # Mensaje cuando no hay tareas
-    │   ├── ProfileCard.tsx      # Tarjeta de perfil reutilizable
-    │   ├── TaskDetail.tsx       # Detalle de una tarea
+    │   ├── ProfileCard.tsx      # Tarjeta de perfil
+    │   ├── TaskDetail.tsx       # Vista de detalle
     │   └── TaskItem.tsx         # Fila de la lista
     ├── constants/
     │   └── theme.ts             # Paleta de colores (COLORS)
+    ├── context/
+    │   └── TasksContext.tsx     # Estado compartido de tareas
+    ├── navigation/
+    │   ├── AppNavigator.tsx     # Configuración principal (Tabs + Stack)
+    │   └── types.ts             # Tipos de las rutas
     ├── screens/
-    │   ├── HomeScreen.tsx       # Pantalla principal y estado
+    │   ├── TaskListScreen.tsx
+    │   ├── TaskDetailScreen.tsx
+    │   ├── TaskFormScreen.tsx
     │   └── ProfileScreen.tsx
     └── types/
         └── task.ts              # Tipo Task
 ```
 
-## Paleta de colores
+## Dependencias principales
 
-Definida en `src/constants/theme.ts` como `COLORS`:
-
-| Nombre | Uso |
-| --- | --- |
-| `primary` | Color principal, foco de inputs y botones |
-| `background` | Fondo de las pantallas |
-| `card` | Fondo de inputs, filas y tarjetas |
-| `text` | Texto principal |
-| `textLight` | Texto secundario y placeholders |
-| `border` | Bordes en reposo |
-| `success` | Estados exitosos |
-| `danger` | Errores y botón de eliminar |
+- `expo`, `react-native`, `typescript`
+- `@react-navigation/native`
+- `@react-navigation/native-stack`
+- `@react-navigation/bottom-tabs`
+- `react-native-screens`
+- `react-native-safe-area-context`
+- `@expo/vector-icons`
 
 ## Cómo ejecutarlo localmente
 
@@ -136,7 +82,7 @@ Definida en `src/constants/theme.ts` como `COLORS`:
 2. Cambiar a la rama de esta entrega:
 
    ```bash
-   git checkout feature/task-detail
+   git checkout feature/navigation
    ```
 
 3. Instalar las dependencias:
@@ -160,4 +106,5 @@ Definida en `src/constants/theme.ts` como `COLORS`:
 
 - [React Native](https://reactnative.dev/)
 - [Expo](https://expo.dev/)
+- [React Navigation](https://reactnavigation.org/)
 - [TypeScript](https://www.typescriptlang.org/)

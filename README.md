@@ -1,107 +1,173 @@
 # TaskFlow App
 
-Aplicación móvil para gestionar tareas, desarrollada con **React Native**, **Expo** y **TypeScript**. Usa **React Navigation** para la navegación y **Redux Toolkit** como estado global.
+Aplicación móvil para gestionar tareas, desarrollada con **React Native**, **Expo** y **TypeScript**. Cada usuario se registra con su email, y sus tareas se guardan en la nube (**Firebase**) y se sincronizan en tiempo real con el estado global (**Redux Toolkit**).
 
 ## Funcionalidades
 
-- Crear tareas con título, descripción y categoría, con validaciones y errores en pantalla.
-- Lista de tareas con `FlatList` y estado vacío ("¡No tienes tareas pendientes! Empieza por crear una arriba.").
-- **Filtro global** (Todas, Pendientes, Completadas) guardado en el store: no se pierde al cambiar de pestaña.
-- Marcar tareas como completadas desde la lista o desde el detalle.
-- Ver el detalle de una tarea y eliminarla con confirmación.
+- **Autenticación:** registro e inicio de sesión con email y contraseña, con mensajes de error claros (email inválido, contraseña incorrecta, sin conexión, etc.).
+- **Persistencia de sesión:** si el usuario cierra y vuelve a abrir la app, no tiene que loguearse de nuevo.
+- **Rutas protegidas:** sin sesión solo existen las pantallas de login y registro; las tareas no son accesibles.
+- **Tareas en la nube:** crear, completar y eliminar tareas, guardadas en Firestore.
+- **Datos por usuario:** cada persona ve únicamente sus tareas.
+- **Filtro global** (Todas, Pendientes, Completadas) guardado en el store.
+- Lista con estado vacío, detalle de tarea y cierre de sesión desde el perfil.
 
-## Navegación
+## Arquitectura
 
 ```
-BottomTabNavigator
-├── Home  →  NativeStackNavigator
-│            ├── TaskList    (lista, filtros y botón "+ Nueva tarea")
-│            ├── TaskDetail  (detalle, completar y eliminar)
-│            └── TaskForm    (formulario para agregar tareas)
-└── Profile                  (tarjeta de perfil)
+Pantallas ──► useTaskActions ──► Firestore (colección "tasks")
+                                      │
+                                 onSnapshot (tiempo real)
+                                      ▼
+                               Redux (tasks) ──► Pantallas
 ```
 
-## Estado global con Redux Toolkit
+Firestore es la **fuente de verdad**: las pantallas escriben en la base y un listener (`onSnapshot`) actualiza el store de Redux. Así la interfaz siempre muestra lo que hay guardado y no pueden quedar datos desincronizados.
 
-Todo el estado de las tareas vive en el store; las pantallas no manejan datos locales. Los componentes reciben props y delegan la lógica al store.
+### Navegación
 
-**Store:** `src/store/store.ts`, configurado con `configureStore`.
-
-**Slice `tasks`:** `src/store/tasksSlice.ts`, creado con `createSlice`.
-
-Estado inicial:
-
-```ts
-{ items: Task[], filter: "all" | "completed" | "pending" }
+```
+AppNavigator
+├── Sin sesión  →  AuthStack
+│                  ├── Login
+│                  └── Register
+└── Con sesión  →  BottomTabNavigator
+                   ├── Home  →  NativeStackNavigator
+                   │            ├── TaskList
+                   │            ├── TaskDetail
+                   │            └── TaskForm
+                   └── Profile
 ```
 
-| Reducer | Qué hace |
-| --- | --- |
-| `addTask` | Recibe los datos del formulario y genera el ID único (`nanoid`), la fecha y `completed: false` |
-| `toggleTaskStatus` | Invierte `completed` de la tarea con ese ID |
-| `deleteTask` | Elimina la tarea con ese ID |
-| `setFilter` | Actualiza el filtro global |
+### Autenticación y sesión
 
-**Selectores:** `selectTasks`, `selectFilter` y `selectFilteredTasks` (con `createSelector`, que solo recalcula cuando cambian las tareas o el filtro).
+- `createAccount` y `signIn` están en `src/services/authService.ts`.
+- `onAuthStateChanged` (en `src/hooks/useFirebaseSync.ts`) restaura la sesión al abrir la app y guarda el usuario (`uid` y `email`) en Redux.
+- La persistencia usa `AsyncStorage`, configurada en `src/firebase/firebaseConfig.ts`.
 
-**Hooks tipados:** `useAppDispatch` y `useAppSelector` en `src/store/hooks.ts`.
+### CRUD en Firestore
 
-## Modelo de datos
+Colección `tasks`, con documentos de esta forma:
 
-```ts
-export type Task = {
-  id: string
-  title: string
-  description: string
-  category: string
-  createdAt: string
-  completed: boolean
+```json
+{
+  "title": "Revisar surtidores",
+  "description": "Controlar el estado de las mangueras",
+  "category": "Mantenimiento",
+  "completed": false,
+  "createdAt": "3/11/2026",
+  "userId": "<uid del usuario>"
 }
 ```
+
+| Operación | Implementación |
+| --- | --- |
+| Crear | `addDoc` con el `userId` del usuario logueado |
+| Leer | `onSnapshot` con `where("userId", "==", uid)` |
+| Actualizar | `updateDoc` para el estado completada/pendiente |
+| Borrar | `deleteDoc` |
+
+### Estado global con Redux Toolkit
+
+- **`authSlice`:** guarda el usuario actual (`setUser`).
+- **`tasksSlice`:** guarda las tareas recibidas de Firestore (`setTasks`) y el filtro (`setFilter`), con los selectores `selectTasks`, `selectFilter` y `selectFilteredTasks`.
+
+### Seguridad
+
+Las reglas de Firestore garantizan que cada usuario solo acceda a sus propios datos:
+
+```
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /tasks/{taskId} {
+      allow read, update, delete: if request.auth != null
+                                  && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null
+                    && request.resource.data.userId == request.auth.uid;
+    }
+  }
+}
+```
+
+### Manejo de errores
+
+- Los errores de autenticación se traducen a mensajes para el usuario.
+- Los formularios se validan antes de llamar a Firebase.
+- Las escrituras y lecturas fallidas muestran una alerta en lugar de cerrar la app.
+- Sin conexión, Firestore deja las escrituras en cola y las envía al reconectar.
 
 ## Estructura del proyecto
 
 ```
-TaskFlow/
+taskflow-app/
 ├── App.tsx                      # Provider de Redux + AppNavigator
+├── .env.example                 # Plantilla de variables de entorno
 ├── package.json
 └── src/
-    ├── assets/
     ├── components/
-    │   ├── AddTaskForm.tsx      # Formulario con validaciones
-    │   ├── EmptyState.tsx       # Mensaje cuando no hay tareas
-    │   ├── ProfileCard.tsx      # Tarjeta de perfil
-    │   ├── TaskDetail.tsx       # Vista de detalle
-    │   └── TaskItem.tsx         # Fila de la lista
+    │   ├── AddTaskForm.tsx
+    │   ├── AuthForm.tsx         # Formulario reutilizable de login y registro
+    │   ├── EmptyState.tsx
+    │   ├── ProfileCards.tsx
+    │   ├── TaskDetail.tsx
+    │   └── TaskItem.tsx
     ├── constants/
-    │   └── theme.ts             # Paleta de colores (COLORS)
+    │   └── theme.ts
+    ├── firebase/
+    │   └── firebaseConfig.ts    # Exporta auth y db
+    ├── hooks/
+    │   ├── useFirebaseSync.ts   # Sesión y listener de tareas
+    │   └── useTaskActions.ts    # Crear, completar y borrar
     ├── navigation/
-    │   ├── AppNavigator.tsx     # Tabs + Stack
-    │   └── types.ts             # Tipos de las rutas
+    │   ├── AppNavigator.tsx
+    │   └── types.ts
     ├── screens/
+    │   ├── LoginScreen.tsx
+    │   ├── RegisterScreen.tsx
     │   ├── TaskListScreen.tsx
     │   ├── TaskDetailScreen.tsx
     │   ├── TaskFormScreen.tsx
-    │   └── ProfileScreen.tsx
+    │   └── ProfileScreens.tsx
+    ├── services/
+    │   ├── authService.ts
+    │   └── tasksService.ts
     ├── store/
-    │   ├── store.ts             # configureStore
-    │   ├── tasksSlice.ts        # createSlice + selectores
-    │   └── hooks.ts             # useAppDispatch / useAppSelector
+    │   ├── authSlice.ts
+    │   ├── hooks.ts
+    │   ├── store.ts
+    │   └── tasksSlice.ts
     └── types/
-        └── task.ts              # Tipos Task y NewTask
+        └── task.ts
 ```
 
 ## Dependencias principales
 
 - `expo`, `react-native`, `typescript`
-- `@reduxjs/toolkit`
-- `react-redux`
-- `@react-navigation/native`
-- `@react-navigation/native-stack`
-- `@react-navigation/bottom-tabs`
-- `react-native-screens`
-- `react-native-safe-area-context`
+- `firebase`
+- `@react-native-async-storage/async-storage`
+- `@reduxjs/toolkit` y `react-redux`
+- `@react-navigation/native`, `@react-navigation/native-stack` y `@react-navigation/bottom-tabs`
+- `react-native-screens` y `react-native-safe-area-context`
 - `@expo/vector-icons`
+
+## Configuración de Firebase
+
+1. Creá un proyecto en la [consola de Firebase](https://console.firebase.google.com/) y registrá una app **Web** para obtener la configuración.
+2. En **Authentication → Sign-in method**, activá **Email/Password**.
+3. En **Firestore Database**, creá la base de datos en modo producción y publicá las reglas de la sección *Seguridad*.
+4. Copiá `.env.example` a `.env` y completá tus credenciales:
+
+   ```
+   EXPO_PUBLIC_FIREBASE_API_KEY=
+   EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=
+   EXPO_PUBLIC_FIREBASE_PROJECT_ID=
+   EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=
+   EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
+   EXPO_PUBLIC_FIREBASE_APP_ID=
+   ```
+
+   El archivo `.env` está en `.gitignore` y no se sube al repositorio.
 
 ## Cómo ejecutarlo localmente
 
@@ -109,13 +175,13 @@ TaskFlow/
 
    ```bash
    git clone <url-del-repositorio>
-   cd TaskFlow
+   cd taskflow-app
    ```
 
 2. Cambiar a la rama de esta entrega:
 
    ```bash
-   git checkout feature/redux
+   git checkout feature/firebase
    ```
 
 3. Instalar las dependencias:
@@ -124,13 +190,15 @@ TaskFlow/
    npm install
    ```
 
-4. Iniciar el servidor de desarrollo:
+4. Configurar Firebase (sección anterior).
+
+5. Iniciar el servidor de desarrollo:
 
    ```bash
    npx expo start
    ```
 
-5. Abrir la app:
+6. Abrir la app:
    - **Celular:** escanear el QR con Expo Go (misma red Wi-Fi).
    - **Emulador Android:** presionar `a` en la terminal.
    - **Navegador:** presionar `w` en la terminal.
@@ -139,6 +207,7 @@ TaskFlow/
 
 - [React Native](https://reactnative.dev/)
 - [Expo](https://expo.dev/)
+- [Firebase](https://firebase.google.com/) (Authentication y Firestore)
 - [Redux Toolkit](https://redux-toolkit.js.org/)
 - [React Navigation](https://reactnavigation.org/)
 - [TypeScript](https://www.typescriptlang.org/)
